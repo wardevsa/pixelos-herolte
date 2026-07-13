@@ -22,7 +22,9 @@ jobs:
       - name: Free disk space
         run: |
           sudo apt-get clean
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /opt/hostedtoolcache
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /opt/hostedtoolcache /usr/local/lib/android /opt/Android
+          sudo swapoff -a; sudo dd if=/dev/zero of=/swapfile bs=1M count=4096; sudo mkswap /swapfile; sudo swapon /swapfile
+          echo "--- Free space after cleanup ---"
           df -h
 
       - name: Install dependencies
@@ -54,7 +56,7 @@ jobs:
       - name: Sync source
         run: |
           cd ~/android/system
-          PYTHONUNBUFFERED=1 repo sync -c --force-sync --no-tags -j8 2>&1
+          PYTHONUNBUFFERED=1 repo sync -c --force-sync --no-tags --depth=1 -j8 2>&1
         timeout-minutes: 300
 
       - name: Clone and apply patches
