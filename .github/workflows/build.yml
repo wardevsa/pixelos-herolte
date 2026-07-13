@@ -1,0 +1,83 @@
+name: Build PixelOS 16 for Galaxy S7
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+env:
+  BRANCH_MANIFEST: sixteen-qpr2
+  BRANCH_DEVICE: lineage-23.2
+  DEVICE: herolte
+  USERNAME: wardevsa
+  USERMAIL: wardevsa@users.noreply.github.com
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo apt-get clean
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost /opt/hostedtoolcache
+          df -h
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential curl flex g++-multilib gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev libelf-dev liblz4-tool libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev libxcrypt-dev python3 python3-pip patchelf
+          sudo apt-get install -y libncurses6 libncursesw6
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "${{ env.USERNAME }}"
+          git config --global user.email "${{ env.USERMAIL }}"
+
+      - name: Initialize repo
+        run: |
+          mkdir -p ~/android/system
+          cd ~/android/system
+          repo init -u https://github.com/PixelOS-AOSP/android_manifest.git -b ${{ env.BRANCH_MANIFEST }} --git-lfs
+
+      - name: Add local manifest
+        run: |
+          mkdir -p ~/android/system/.repo/local_manifests
+          cp ${{ github.workspace }}/roomservice.xml ~/android/system/.repo/local_manifests/
+
+      - name: Sync source
+        run: |
+          cd ~/android/system
+          repo sync -c --force-sync --no-clone-bundle --no-tags -j$(nproc --all) 2>&1
+        timeout-minutes: 120
+
+      - name: Clone and apply patches
+        continue-on-error: true
+        run: |
+          cd ~/android/system
+          git clone https://github.com/rINanDO/galaxys7-patches.git -b main /tmp/patches 2>&1 || true
+          if [ -d /tmp/patches/LOS-23.2 ]; then
+            bash /tmp/patches/LOS-23.2/apply.sh 2>&1 | tee /tmp/patch_results.log || true
+          fi
+          echo "--- Patches application result ---"
+          if [ -f /tmp/patch_results.log ]; then
+            grep -E "(applying|error|fail|falling)" /tmp/patch_results.log || true
+          fi
+
+      - name: Build
+        run: |
+          cd ~/android/system
+          . build/envsetup.sh
+          lunch lineage_herolte-userdebug
+          mka bacon -j$(nproc --all) 2>&1
+        timeout-minutes: 360
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PixelOS-16-${{ env.DEVICE }}
+          path: ~/android/system/out/target/product/${{ env.DEVICE }}/PixelOS-*.zip
+          if-no-files-found: warn
+          retention-days: 7
