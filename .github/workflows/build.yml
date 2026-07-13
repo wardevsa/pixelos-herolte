@@ -54,7 +54,7 @@ jobs:
       - name: Sync source
         run: |
           cd ~/android/system
-          PYTHONUNBUFFERED=1 repo sync -c --force-sync --no-tags -j8 --verbose 2>&1
+          PYTHONUNBUFFERED=1 repo sync -c --force-sync --no-tags -j8 2>&1
         timeout-minutes: 300
 
       - name: Clone and apply patches
