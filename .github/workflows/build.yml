@@ -54,8 +54,8 @@ jobs:
       - name: Sync source
         run: |
           cd ~/android/system
-          repo sync -c --force-sync --no-clone-bundle --no-tags -j16 --verbose 2>&1
-        timeout-minutes: 180
+          stdbuf -oL repo sync -c --force-sync --no-tags -j8 --verbose 2>&1
+        timeout-minutes: 300
 
       - name: Clone and apply patches
         continue-on-error: true
