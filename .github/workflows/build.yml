@@ -15,6 +15,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
 
@@ -53,8 +54,8 @@ jobs:
       - name: Sync source
         run: |
           cd ~/android/system
-          repo sync -c --force-sync --no-clone-bundle --no-tags -j$(nproc --all) 2>&1
-        timeout-minutes: 120
+          repo sync -c --force-sync --no-clone-bundle --no-tags -j16 --verbose 2>&1
+        timeout-minutes: 180
 
       - name: Clone and apply patches
         continue-on-error: true
