@@ -46,7 +46,7 @@ jobs:
         run: |
           mkdir -p ~/android/system
           cd ~/android/system
-          repo init -u https://github.com/PixelOS-AOSP/android_manifest.git -b ${{ env.BRANCH_MANIFEST }}
+          repo init -u https://github.com/PixelOS-AOSP/android_manifest.git -b ${{ env.BRANCH_MANIFEST }} --depth=1
 
       - name: Add local manifest
         run: |
@@ -56,7 +56,7 @@ jobs:
       - name: Sync source
         run: |
           cd ~/android/system
-          PYTHONUNBUFFERED=1 repo sync -c --force-sync --no-tags --depth=1 -j8 2>&1
+          PYTHONUNBUFFERED=1 repo sync -c --force-sync --no-tags -j8 2>&1
         timeout-minutes: 300
 
       - name: Clone and apply patches
